@@ -1,0 +1,14 @@
+{
+  "name": "crsf-telemetry-reader",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "serialport": "^7.1.4"
+  }
+}

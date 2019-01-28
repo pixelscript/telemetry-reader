@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Flight</name>
+    <description>Flight in blah.</description>
+    <Style id="yellowLineGreenPoly">
+      <LineStyle>
+        <color>7f00ffff</color>
+        <width>4</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>7f00ff00</color>
+      </PolyStyle>
+    </Style>
+    <Placemark>
+      <name>Absolute Extruded</name>
+      <description>Transparent green wall with yellow outlines</description>
+      <styleUrl>#yellowLineGreenPoly</styleUrl>
+      <LineString>
+        <extrude>1</extrude>
+        <tessellate>1</tessellate>
+        <altitudeMode>absolute</altitudeMode>
+        <coordinates> -1.0602203,54.4544342,317
+          -1.0862872,54.4381048,418
+          -1.1146139,54.4264959,447
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>
