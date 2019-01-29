@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/node-uuid/1.4.8/uuid.js"></script>
+    <title>Live Crossfire Telemetry</title>
+    <style>
+      html, body {
+        height: 100%;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        }
+      #map {
+        height: 100%;
+        width: 100%;
+       overflow: hidden;
+       float: left;
+       border: thin solid #333;
+       }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      const history = JSON.parse(localStorage.getItem('flightHistory')) || [];
+      const thisFlight = uuid();
+      history.push(thisFlight);
+      localStorage.setItem('flightHistory',JSON.stringify(history));
+
+      let gpsArray = [];
+      let map;
+      let poly;
+      let path;
+      let tracker;
+      let trackerpath;
+      let home;
+      function initMap() {
+        home = new google.maps.LatLng(54.5915776,-1.30729);
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: new google.maps.LatLng(54.4544342,-1.0602203),
+          zoom: 15,
+          mapTypeId: 'terrain'
+        });
+
+        poly = new google.maps.Polyline({
+          strokeColor: '#000000',
+          strokeOpacity: 1.0,
+          strokeWeight: 3
+        });
+        poly.setMap(map);
+        path = poly.getPath();
+
+        tracker = new google.maps.Polyline({
+          strokeColor: '#00FF00',
+          strokeOpacity: 1.0,
+          strokeWeight: 3,
+          geodesic: true
+        });
+        tracker.setMap(map);
+        trackerpath = tracker.getPath();
+      }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDISYIikzKG6gzSg11jPvsaMtlIxzsiygc&callback=initMap">
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      var socket = io();
+      socket.on('gps', function(gps){
+        saveFlightLog(gps);
+        if(poly) {
+          path.push(new google.maps.LatLng(gps.lat,gps.long));
+          poly.setPath(path);
+          map.panTo(new google.maps.LatLng(gps.lat,gps.long));
+          trackerpath = [home, new google.maps.LatLng(gps.lat,gps.long)];
+          tracker.setPath(trackerpath);
+          var heading = google.maps.geometry.spherical.computeHeading(trackerpath[0], trackerpath[1]);
+          var distance = google.maps.geometry.spherical.computeDistanceBetween(trackerpath[0], trackerpath[1]);
+          console.log(heading, distance);
+        }
+        console.log(gps);
+
+      });
+      function saveFlightLog(gps) {
+        gpsArray.push(gps);
+        localStorage.setItem(thisFlight,JSON.stringify(gpsArray));
+      }
+    </script>
+  </body>
+</html>

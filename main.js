@@ -1,9 +1,26 @@
 const SerialPort = require('serialport');
 const ByteLength = require('@serialport/parser-byte-length');
 const crc8 = require('./utils.js');
+const _ = require('lodash');
 // const { crc81wire } = require('crc');
 let telemetryRxBuffer = [];
 const TELEMETRY_RX_PACKET_SIZE = 128;
+
+const app = require('express')();
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+
+app.get('/', function(req, res){
+  res.sendFile(__dirname+'/web/index.html');
+});
+
+io.on('connection', function(socket){
+  console.log('a user connected');
+});
+
+http.listen(3000, function(){
+  console.log('listening on *:3000');
+});
 
 //CRSF_FRAME_SIZE_MAX = 64?
 
@@ -68,6 +85,37 @@ const subtypeLabel =
 'ATTITUDE_YAW_INDEX',
 'FLIGHT_MODE_INDEX',
 'UNKNOWN_INDEX']
+
+/*
+//frame type //subtype //label          //unit             //precision?
+const CrossfireSensor crossfireSensors[] = {
+  {LINK_ID,        0, ZSTR_RX_RSSI1,    UNIT_DB,            0},
+  {LINK_ID,        1, ZSTR_RX_RSSI2,    UNIT_DB,            0},
+  {LINK_ID,        2, ZSTR_RX_QUALITY,  UNIT_PERCENT,       0},
+  {LINK_ID,        3, ZSTR_RX_SNR,      UNIT_DB,            0},
+  {LINK_ID,        4, ZSTR_ANTENNA,     UNIT_RAW,           0},
+  {LINK_ID,        5, ZSTR_RF_MODE,     UNIT_RAW,           0},
+  {LINK_ID,        6, ZSTR_TX_POWER,    UNIT_MILLIWATTS,    0},
+  {LINK_ID,        7, ZSTR_TX_RSSI,     UNIT_DB,            0},
+  {LINK_ID,        8, ZSTR_TX_QUALITY,  UNIT_PERCENT,       0},
+  {LINK_ID,        9, ZSTR_TX_SNR,      UNIT_DB,            0},
+  {BATTERY_ID,     0, ZSTR_BATT,        UNIT_VOLTS,         1},
+  {BATTERY_ID,     1, ZSTR_CURR,        UNIT_AMPS,          1},
+  {BATTERY_ID,     2, ZSTR_CAPACITY,    UNIT_MAH,           0},
+  {GPS_ID,         0, ZSTR_GPS,         UNIT_GPS_LATITUDE,  0},
+  {GPS_ID,         0, ZSTR_GPS,         UNIT_GPS_LONGITUDE, 0},
+  {GPS_ID,         2, ZSTR_GSPD,        UNIT_KMH,           1},
+  {GPS_ID,         3, ZSTR_HDG,         UNIT_DEGREE,        3},
+  {GPS_ID,         4, ZSTR_ALT,         UNIT_METERS,        0},
+  {GPS_ID,         5, ZSTR_SATELLITES,  UNIT_RAW,           0},
+  {ATTITUDE_ID,    0, ZSTR_PITCH,       UNIT_RADIANS,       3},
+  {ATTITUDE_ID,    1, ZSTR_ROLL,        UNIT_RADIANS,       3},
+  {ATTITUDE_ID,    2, ZSTR_YAW,         UNIT_RADIANS,       3},
+  {FLIGHT_MODE_ID, 0, ZSTR_FLIGHT_MODE, UNIT_TEXT,          0},
+  {0,              0, "UNKNOWN",        UNIT_RAW,           0},
+};
+*/
+
 /*
  * CRSF protocol
  *
@@ -146,15 +194,15 @@ function getFrameType(type) {
 function processBattery() {
   let value;
   if (value = getCrossfireTelemetryValue(2, 3)) {
-    console.log('BATT_VOLTAGE_INDEX', value.value);
+    // console.log('BATT_VOLTAGE_INDEX', value.value);
     // processCrossfireTelemetryValue(BATT_VOLTAGE_INDEX, value.value);
   }
   if (value = getCrossfireTelemetryValue(2, 5)) {
-    console.log('BATT_CURRENT_INDEX', value.value);
+    // console.log('BATT_CURRENT_INDEX', value.value);
     // processCrossfireTelemetryValue(BATT_CURRENT_INDEX, value.value);
   }
   if (value = getCrossfireTelemetryValue(3, 7)) {
-    console.log('BATT_CAPACITY_INDEX', value.value);
+    // console.log('BATT_CAPACITY_INDEX', value.value);
     // processCrossfireTelemetryValue(BATT_CAPACITY_INDEX, value.value);
   }
 }
@@ -162,15 +210,15 @@ function processBattery() {
 function processAttitude(){
 
   if (value = getCrossfireTelemetryValue(2, 3)) {
-    console.log('ATTITUDE_PITCH_INDEX', value.value/10);
+    // console.log('ATTITUDE_PITCH_INDEX', value.value/10);
     // processCrossfireTelemetryValue(ATTITUDE_PITCH_INDEX, value.value/10);
   }
   if (value = getCrossfireTelemetryValue(2, 5)) {
-    console.log('ATTITUDE_ROLL_INDEX', value.value/10);
+    // console.log('ATTITUDE_ROLL_INDEX', value.value/10);
     // processCrossfireTelemetryValue(ATTITUDE_ROLL_INDEX, value.value/10);
   }
   if (value = getCrossfireTelemetryValue(2, 7)) {
-    console.log('ATTITUDE_YAW_INDEX', value.value/10);
+    // console.log('ATTITUDE_YAW_INDEX', value.value/10);
     // processCrossfireTelemetryValue(ATTITUDE_YAW_INDEX, value.value/10);
   }
 
@@ -178,31 +226,47 @@ function processAttitude(){
 
 function processGPS(){
   let value;
-  console.log(telemetryRxBuffer.slice(3).join(','))
+  // console.log(telemetryRxBuffer.slice(3).join(','));
+  let gpsInfo = {}
   if (value = getCrossfireTelemetryValue(4, 3)) {
-    console.log('GPS_LATITUDE_INDEX', value.value/10);
+    gpsInfo.lat = value.value/10000000;
+    // console.log('GPS_LATITUDE_INDEX', value.value/10);
     // processCrossfireTelemetryValue(GPS_LATITUDE_INDEX, value/10);
   }
   if (value = getCrossfireTelemetryValue(4, 7)) {
-    console.log('GPS_LONGITUDE_INDEX', value.value/10);
+    gpsInfo.long = value.value/10000000;
+    // console.log('GPS_LONGITUDE_INDEX', value.value/10);
     // processCrossfireTelemetryValue(GPS_LONGITUDE_INDEX, value/10);
   }
   if (value = getCrossfireTelemetryValue(2, 11)) {
-    console.log('GPS_GROUND_SPEED_INDEX', value.value);
+    gpsInfo.speed = value.value;
+    // console.log('GPS_GROUND_SPEED_INDEX', value.value);
     // processCrossfireTelemetryValue(GPS_GROUND_SPEED_INDEX, value);
   }
   if (value = getCrossfireTelemetryValue(2, 13)) {
-    console.log('GPS_HEADING_INDEX', value.value);
+    gpsInfo.heading = value.value;
+    // console.log('GPS_HEADING_INDEX', value.value);
     // processCrossfireTelemetryValue(GPS_HEADING_INDEX, value);
   }
   if (value = getCrossfireTelemetryValue(2, 15)) {
-    console.log('GPS_ALTITUDE_INDEX', value.value - 1000);
+    gpsInfo.alt = value.value - 1000;
+    // console.log('GPS_ALTITUDE_INDEX', value.value - 1000);
     // processCrossfireTelemetryValue(GPS_ALTITUDE_INDEX,  value - 1000);
   }
   if (value = getCrossfireTelemetryValue(1, 17)) {
-    console.log('GPS_SATELLITES_INDEX', value.value);
+    gpsInfo.numSats = value.value;
+    // console.log('GPS_SATELLITES_INDEX', value.value);
     // processCrossfireTelemetryValue(GPS_SATELLITES_INDEX, value);
   }
+  if(gpsInfo.numSats > 0){
+    throttledBroadcast('gps', gpsInfo);
+  }
+}
+
+const throttledBroadcast = _.throttle(broadcastInfo, 1000);
+
+function broadcastInfo(type, info) {
+  io.emit(type, info);
 }
 
 function getCrossfireTelemetryValue(N, index){
@@ -263,7 +327,7 @@ function processCrossfireTelemetryFrame() {
     // console.log("[XF] CRC error");
     return;
   }
-  console.log(getFrameType(telemetryRxBuffer[2]));
+  getFrameType(telemetryRxBuffer[2]);
   // telemetryRxBuffer[2] = telemetryRxBuffer[2]+'('++')';
   // console.log(telemetryRxBuffer.slice(2,telemetryRxBuffer.length-1).join(','));
 
