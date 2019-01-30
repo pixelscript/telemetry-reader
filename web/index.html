@@ -68,7 +68,18 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
       var socket = io();
-      socket.on('gps', function(gps){
+      socket.on('gps',handleGps);
+      // socket.on('attitude', values =>{
+      //   console.log(values)
+      // });
+      // socket.on('battery', values =>{
+      //   console.log(values)
+      // });
+      socket.on('link', values =>{
+        console.table(values)
+      });
+
+      function handleGps(gps){
         saveFlightLog(gps);
         if(poly) {
           path.push(new google.maps.LatLng(gps.lat,gps.long));
@@ -81,8 +92,8 @@
           console.log(heading, distance);
         }
         console.log(gps);
+      }
 
-      });
       function saveFlightLog(gps) {
         gpsArray.push(gps);
         localStorage.setItem(thisFlight,JSON.stringify(gpsArray));

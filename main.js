@@ -2,7 +2,6 @@ const SerialPort = require('serialport');
 const ByteLength = require('@serialport/parser-byte-length');
 const crc8 = require('./utils.js');
 const _ = require('lodash');
-// const { crc81wire } = require('crc');
 let telemetryRxBuffer = [];
 const TELEMETRY_RX_PACKET_SIZE = 128;
 
@@ -60,7 +59,7 @@ const ATTITUDE_ROLL_INDEX = 20;
 const ATTITUDE_YAW_INDEX = 21;
 const FLIGHT_MODE_INDEX = 22;
 const UNKNOWN_INDEX = 23;
-const subtypeLabel = 
+const subtypeId = 
 ['RX_RSSI1_INDEX',
 'RX_RSSI2_INDEX',
 'RX_QUALITY_INDEX',
@@ -167,6 +166,7 @@ function getFrameType(type) {
       return'battery';
       break;
     case LINK_ID:
+      processLink();
       return 'link info';
       break;
     case CHANNELS_ID:
@@ -191,37 +191,49 @@ function getFrameType(type) {
   }
 }
 
+function processLink() {
+  let value;
+  let linkInfo = {};
+  for (let i = 0; i<= TX_SNR_INDEX; i++) {
+    if (value = getCrossfireTelemetryValue(1, 3+i)) {
+      if (i == TX_POWER_INDEX) {
+        const power_values = [ 0, 10, 25, 100, 500, 1000, 2000 ];
+        value.value = (value.value < power_values.length && value.value >= 0) ? power_values[value.value] : 0;
+      }
+      linkInfo[subtypeId[i]] = value.value;
+    }
+  }
+  throttledLink('link', linkInfo);
+}
+
 function processBattery() {
   let value;
+  let battryInfo = {}
   if (value = getCrossfireTelemetryValue(2, 3)) {
-    // console.log('BATT_VOLTAGE_INDEX', value.value);
-    // processCrossfireTelemetryValue(BATT_VOLTAGE_INDEX, value.value);
+    battryInfo.voltage = value.value/10;
   }
   if (value = getCrossfireTelemetryValue(2, 5)) {
-    // console.log('BATT_CURRENT_INDEX', value.value);
-    // processCrossfireTelemetryValue(BATT_CURRENT_INDEX, value.value);
+    battryInfo.current = value.value/10;
   }
   if (value = getCrossfireTelemetryValue(3, 7)) {
-    // console.log('BATT_CAPACITY_INDEX', value.value);
-    // processCrossfireTelemetryValue(BATT_CAPACITY_INDEX, value.value);
+    battryInfo.capacity = value.value;
   }
+  throttledBattery('battery', battryInfo);
 }
 
 function processAttitude(){
-
+  let value;
+  let attitudeInfo = {};
   if (value = getCrossfireTelemetryValue(2, 3)) {
-    // console.log('ATTITUDE_PITCH_INDEX', value.value/10);
-    // processCrossfireTelemetryValue(ATTITUDE_PITCH_INDEX, value.value/10);
+    attitudeInfo.pitch = value.value/10000;
   }
   if (value = getCrossfireTelemetryValue(2, 5)) {
-    // console.log('ATTITUDE_ROLL_INDEX', value.value/10);
-    // processCrossfireTelemetryValue(ATTITUDE_ROLL_INDEX, value.value/10);
+    attitudeInfo.roll = value.value/10000;
   }
   if (value = getCrossfireTelemetryValue(2, 7)) {
-    // console.log('ATTITUDE_YAW_INDEX', value.value/10);
-    // processCrossfireTelemetryValue(ATTITUDE_YAW_INDEX, value.value/10);
+    attitudeInfo.yaw = value.value/10000;
   }
-
+  throttledAttitude('attitude', attitudeInfo);
 }
 
 function processGPS(){
@@ -230,40 +242,31 @@ function processGPS(){
   let gpsInfo = {}
   if (value = getCrossfireTelemetryValue(4, 3)) {
     gpsInfo.lat = value.value/10000000;
-    // console.log('GPS_LATITUDE_INDEX', value.value/10);
-    // processCrossfireTelemetryValue(GPS_LATITUDE_INDEX, value/10);
   }
   if (value = getCrossfireTelemetryValue(4, 7)) {
     gpsInfo.long = value.value/10000000;
-    // console.log('GPS_LONGITUDE_INDEX', value.value/10);
-    // processCrossfireTelemetryValue(GPS_LONGITUDE_INDEX, value/10);
   }
   if (value = getCrossfireTelemetryValue(2, 11)) {
     gpsInfo.speed = value.value;
-    // console.log('GPS_GROUND_SPEED_INDEX', value.value);
-    // processCrossfireTelemetryValue(GPS_GROUND_SPEED_INDEX, value);
   }
   if (value = getCrossfireTelemetryValue(2, 13)) {
     gpsInfo.heading = value.value;
-    // console.log('GPS_HEADING_INDEX', value.value);
-    // processCrossfireTelemetryValue(GPS_HEADING_INDEX, value);
   }
   if (value = getCrossfireTelemetryValue(2, 15)) {
     gpsInfo.alt = value.value - 1000;
-    // console.log('GPS_ALTITUDE_INDEX', value.value - 1000);
-    // processCrossfireTelemetryValue(GPS_ALTITUDE_INDEX,  value - 1000);
   }
   if (value = getCrossfireTelemetryValue(1, 17)) {
     gpsInfo.numSats = value.value;
-    // console.log('GPS_SATELLITES_INDEX', value.value);
-    // processCrossfireTelemetryValue(GPS_SATELLITES_INDEX, value);
   }
   if(gpsInfo.numSats > 0){
-    throttledBroadcast('gps', gpsInfo);
+    throttledGps('gps', gpsInfo);
   }
 }
 
-const throttledBroadcast = _.throttle(broadcastInfo, 1000);
+const throttledGps = _.throttle(broadcastInfo, 1000);
+const throttledAttitude = _.throttle(broadcastInfo, 1000);
+const throttledLink = _.throttle(broadcastInfo, 1000);
+const throttledBattery = _.throttle(broadcastInfo, 1000);
 
 function broadcastInfo(type, info) {
   io.emit(type, info);
