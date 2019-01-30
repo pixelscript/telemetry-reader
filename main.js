@@ -177,6 +177,7 @@ function getFrameType(type) {
       return 'attitude info';
       break;
     case FLIGHT_MODE_ID:
+      processFlightMode();
       return 'flight mode info';
       break;
     case PING_DEVICES_ID:
@@ -189,6 +190,15 @@ function getFrameType(type) {
       return 'request settings info';
       break;
   }
+}
+
+function processFlightMode() {
+  let fm = '';
+  // length is limited in opentx not sure if we need to limit here
+  for (let i=3; i<= Math.min(16, telemetryRxBuffer[1]-1); i++) {
+    fm += String.fromCharCode(telemetryRxBuffer[i]);
+  }
+  throttledFlightMode('link', {flightmode:fm});
 }
 
 function processLink() {
@@ -238,7 +248,6 @@ function processAttitude(){
 
 function processGPS(){
   let value;
-  // console.log(telemetryRxBuffer.slice(3).join(','));
   let gpsInfo = {}
   if (value = getCrossfireTelemetryValue(4, 3)) {
     gpsInfo.lat = value.value/10000000;
@@ -267,6 +276,7 @@ const throttledGps = _.throttle(broadcastInfo, 1000);
 const throttledAttitude = _.throttle(broadcastInfo, 1000);
 const throttledLink = _.throttle(broadcastInfo, 1000);
 const throttledBattery = _.throttle(broadcastInfo, 1000);
+const throttledFlightMode = _.throttle(broadcastInfo, 1000);
 
 function broadcastInfo(type, info) {
   io.emit(type, info);
