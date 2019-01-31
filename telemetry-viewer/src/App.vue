@@ -1,13 +1,14 @@
 <template>
   <el-container id="app">
     <el-header>
-      <SerialConnection></SerialConnection>
+      <serial-connection></serial-connection>
     </el-header>
     <el-main>
       <el-row>
         <el-col :span="16" class="live">
           <el-row class="map">
-          <GmapMap
+            <GpsMap></GpsMap>
+          <!-- <GmapMap
             :center="{lat:54.5915776, lng:-1.30729}"
             :zoom="12"
             map-type-id="terrain"
@@ -21,15 +22,17 @@
               :draggable="true"
               @click="center=m.position"
             />
-          </GmapMap>
+          </GmapMap> -->
           </el-row>
           <el-row class="height">
-            <HeightMapping :width="500" :height="250"></HeightMapping>
+            <height-mapping :width="500" :height="250"></height-mapping>
           </el-row>
         </el-col>
         
         <el-col :span="8" class="side">
-          fuck
+          <el-row>
+            <attitude-viewer rotx="2" roty="0.6" rotz="0.1"></attitude-viewer>
+          </el-row>
         </el-col>
       </el-row>
     </el-main>
@@ -40,6 +43,8 @@
 <script>
 import SerialConnection from './components/SerialConnection'
 import HeightMapping from './components/HeightMapping'
+import AttitudeViewer from './components/AttitudeViewer'
+import GpsMap from './components/GpsMap'
 export default {
   name: 'App',
   data: function(){
@@ -49,7 +54,9 @@ export default {
     },
   components:{
     SerialConnection,
-    HeightMapping
+    HeightMapping,
+    AttitudeViewer,
+    GpsMap
   }
 }
 </script>
@@ -72,6 +79,7 @@ body,html,.el-container,.el-main, .el-row{
 }
 .side {
   background:red;
+  height:100%;
 }
 
 .live {
@@ -84,5 +92,10 @@ body,html,.el-container,.el-main, .el-row{
 
 .height {
   height:30%;
+}
+
+.el-header{
+  padding:10px;
+  background:#2c3e50;
 }
 </style>

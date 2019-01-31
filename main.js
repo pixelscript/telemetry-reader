@@ -301,7 +301,7 @@ function processGPS(){
 }
 
 const throttledGps = _.throttle(broadcastInfo, 1000);
-const throttledAttitude = _.throttle(broadcastInfo, 1000);
+const throttledAttitude = _.throttle(broadcastInfo, 1);
 const throttledLink = _.throttle(broadcastInfo, 1000);
 const throttledBattery = _.throttle(broadcastInfo, 1000);
 const throttledFlightMode = _.throttle(broadcastInfo, 1000);

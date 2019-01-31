@@ -19,6 +19,8 @@ http.listen(3000, function(){
 
 setInterval(broadcastInfo,1000)
 function broadcastInfo() {
+  // io.emit('attitude', {pitch:(Math.PI / 4),roll:0,yaw:0});
+// }
   io.emit('gps', obj[i]);
   i++;
   if (i> obj.length) {
