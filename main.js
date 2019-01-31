@@ -5,12 +5,53 @@ const _ = require('lodash');
 let telemetryRxBuffer = [];
 const TELEMETRY_RX_PACKET_SIZE = 128;
 
-const app = require('express')();
+const express = require('express');
+var bodyParser = require('body-parser');
+const app = express();
+app.use(bodyParser.json());
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
+let port;
+let parser;
+
+app.all('*', function(req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+
 app.get('/', function(req, res){
   res.sendFile(__dirname+'/web/index.html');
+});
+
+app.get('/ports', function(req, res){
+  SerialPort.list((err, results) => {
+    if (err) {
+      res.send('whoops');
+    } else {
+      res.setHeader('Content-Type', 'text/json');
+      res.send(JSON.stringify(results));
+    };
+  })
+});
+
+app.post('/connect', function(req, res){
+  port = new SerialPort(req.body.comName, {
+    baudRate: Number(req.body.baud)
+  }, function (err) {
+    if (err) {
+      res.send('Error: ', err.message)
+    } else {
+      res.send('{"successful": true}');
+      parser = port.pipe(new ByteLength({length: 1}));
+      parser.on('data', data => {
+        processTelemetry(data[0]);
+      })
+    }
+    res.end();
+  });
 });
 
 io.on('connection', function(socket){
@@ -141,19 +182,6 @@ const CrossfireSensor crossfireSensors[] = {
  * CRC:            (uint8_t)
  *
  */
-
-var port = new SerialPort("/dev/cu.wchusbserial1410", {
-  baudRate: 115200
-}, function (err) {
-  if (err) {
-    return console.log('Error: ', err.message)
-  }
-});
-
-const parser = port.pipe(new ByteLength({length: 1}))
-parser.on('data', data => {
-  processTelemetry(data[0]);
-})
 
 function getFrameType(type) {
   switch (type) {
