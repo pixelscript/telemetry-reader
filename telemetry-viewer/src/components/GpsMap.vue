@@ -30,13 +30,25 @@ export default {
           this.tracker.setPath(this.trackerpath);
           var heading = google.maps.geometry.spherical.computeHeading(this.trackerpath[0], this.trackerpath[1]);
           var distance = google.maps.geometry.spherical.computeDistanceBetween(this.trackerpath[0], this.trackerpath[1]);
-          console.log(heading, distance);
+          this.$store.commit('setDistance',distance);
+          this.$store.commit('setHeadingAngle', heading);
+          this.$store.commit('setAlt', gps.alt);
+          // this.$store.commit('setHomeLat', gps.lat);
+          // this.$store.commit('setHomeLong', gps.long);
         }
+    }
+  },
+  computed: {
+    home: function() {
+      //      return new google.maps.LatLng(this.$store.state.homeLat,this.$store.state.homeLong);
+      if(this.$store.state.homeLat !== 0 && this.$store.state.homeLong !== 0) {
+        return new google.maps.LatLng(this.$store.state.homeLat,this.$store.state.homeLong);
+      }
+      return new google.maps.LatLng(54.5915776,-1.30729);
     }
   },
   methods: {
     initMap: function () {
-      this.home = new google.maps.LatLng(54.5915776,-1.30729);
       this.map = new google.maps.Map(document.getElementById('map'), {
         center: new google.maps.LatLng(54.4544342,-1.0602203),
         zoom: 15,

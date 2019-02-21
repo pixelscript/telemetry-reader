@@ -1,6 +1,9 @@
 <template>
   <div id="serial-connection">
+    <el-button type="primary" icon="el-icon-download" circle @click="resetHome"></el-button>
+    <div class="seperator">|</div>
     <el-button type="primary" icon="el-icon-refresh" circle @click="fetchPorts"></el-button>
+    <div class="seperator">|</div>
     <div class="icon">
       <img src="../assets/transmitter.svg" class="t-icon"/>
     </div>
@@ -51,8 +54,18 @@ import axios from 'axios';
 
 export default {
   name: 'SerialConnection',
+  sockets: {
+    gps: function(gpsinfo){
+      if(this.waitForGPS) {
+        this.$store.commit('setHomeLat',gpsinfo.lat);
+        this.$store.commit('setHomeLong',gpsinfo.long);
+      }
+      this.waitForGPS = false;
+    }
+  },
   data: function(){
     return {
+      waitForGPS: false,
       transmitterConnected: false,
       transmitterBaudRates: [
         {label: 'CRSF - 115200', value: 115200}
@@ -73,6 +86,9 @@ export default {
     this.fetchPorts();
   },
   methods: {
+    resetHome() {
+      this.waitForGPS = true;
+    },
     fetchPorts() {
       axios.get(`//localhost:3000/ports`)
         .then(response => {
@@ -83,19 +99,23 @@ export default {
           console.log(e);
         })
     },
-    connectToPort() {
-      const comName = this.chosenConnection;
-      const baud = this.chosenBaud;
+    connectToTransmitterPort() {
+      const comName = this.transmitterChosenConnection;
+      const baud = this.transmitterChosenBaud;
       axios.post(`//localhost:3000/connect`, {
         comName,
         baud})
         .then(response => {
+          this.trnsmitterConnected = true;
           // JSON responses are automatically parsed.
-          this.connections = response.data
+          // this.connections = response.data
         })
         .catch(e => {
           console.log(e);
         })
+    },
+    connectToAntennaPort(){
+
     }
   }
 }

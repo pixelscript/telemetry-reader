@@ -1,5 +1,6 @@
 const SerialPort = require('serialport');
 const ByteLength = require('@serialport/parser-byte-length');
+const Readline = require('@serialport/parser-readline');
 const crc8 = require('./utils.js');
 const _ = require('lodash');
 let telemetryRxBuffer = [];
@@ -42,18 +43,28 @@ app.post('/connect', function(req, res){
     baudRate: Number(req.body.baud)
   }, function (err) {
     if (err) {
-      res.send('Error: ', err.message)
+      res.send(500, err.message)
     } else {
       res.send('{"successful": true}');
-      parser = port.pipe(new ByteLength({length: 1}));
-      parser.on('data', data => {
-        processTelemetry(data[0]);
-      })
+      setFastMode();
     }
     res.end();
   });
 });
 
+function setFastMode(){
+  // const parser = port.pipe(new Readline({ delimiter: '\n' }))
+  // parser.on('data', console.log)
+  port.write('$$$');
+  setTimeout(()=>port.write("F,1\n"),2000);
+  setTimeout(setupRead,4000);
+}
+function setupRead() {
+  parser = port.pipe(new ByteLength({length: 1}));
+  parser.on('data', data => {
+    processTelemetry(data[0]);
+  });
+}
 io.on('connection', function(socket){
   console.log('a user connected');
 });
@@ -301,12 +312,13 @@ function processGPS(){
 }
 
 const throttledGps = _.throttle(broadcastInfo, 1000);
-const throttledAttitude = _.throttle(broadcastInfo, 1);
+const throttledAttitude = _.throttle(broadcastInfo, 1000);
 const throttledLink = _.throttle(broadcastInfo, 1000);
 const throttledBattery = _.throttle(broadcastInfo, 1000);
 const throttledFlightMode = _.throttle(broadcastInfo, 1000);
 
 function broadcastInfo(type, info) {
+  info.time = Date.now();
   io.emit(type, info);
 }
 

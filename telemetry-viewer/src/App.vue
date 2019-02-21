@@ -6,36 +6,27 @@
     <el-main>
       <el-row>
         <el-col :span="16" class="live">
-          <el-row class="map">
+          <el-row class="seventy">
             <GpsMap></GpsMap>
-          <!-- <GmapMap
-            :center="{lat:54.5915776, lng:-1.30729}"
-            :zoom="12"
-            map-type-id="terrain"
-            style="width: 100%; height: 100%"
-          >
-            <GmapMarker
-              :key="index"
-              v-for="(m, index) in markers"
-              :position="m.position"
-              :clickable="true"
-              :draggable="true"
-              @click="center=m.position"
-            />
-          </GmapMap> -->
           </el-row>
-          <el-row class="height">
+          <el-row class="thirty">
             <height-mapping :width="500" :height="250"></height-mapping>
           </el-row>
         </el-col>
         
         <el-col :span="8" class="side">
           <el-row>
-            <attitude-viewer rotx="2" roty="0.6" rotz="0.1"></attitude-viewer>
+            <el-col class="thirty">
+              <AntennaInfo></AntennaInfo>
+            </el-col>
+            <el-col class="seventy">
+              <attitude-viewer rotx="2" roty="0.6" rotz="0.1"></attitude-viewer>
+            </el-col>
           </el-row>
         </el-col>
       </el-row>
     </el-main>
+    <FlightRecorder></FlightRecorder>
   </el-container>
   
 </template>
@@ -45,6 +36,8 @@ import SerialConnection from './components/SerialConnection'
 import HeightMapping from './components/HeightMapping'
 import AttitudeViewer from './components/AttitudeViewer'
 import GpsMap from './components/GpsMap'
+import AntennaInfo from './components/AntennaInfo'
+import FlightRecorder from './components/FlightRecorder'
 export default {
   name: 'App',
   data: function(){
@@ -53,10 +46,12 @@ export default {
       }
     },
   components:{
+    FlightRecorder,
     SerialConnection,
     HeightMapping,
     AttitudeViewer,
-    GpsMap
+    GpsMap,
+    AntennaInfo
   }
 }
 </script>
@@ -78,7 +73,6 @@ body,html,.el-container,.el-main, .el-row{
   color: #2c3e50;
 }
 .side {
-  background:red;
   height:100%;
 }
 
@@ -86,11 +80,11 @@ body,html,.el-container,.el-main, .el-row{
   height:100%;
 }
 
-.map {
+.seventy {
   height:70%;
 }
 
-.height {
+.thirty {
   height:30%;
 }
 
