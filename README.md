@@ -1,4 +1,4 @@
-#A CRSF telemetry reader (not finished)
+# A CRSF telemetry reader (not finished)
 
 The aim of this project was to enable the reading of telemetry via a bluetooth mod on a taranis and have it control an antenna tracker.
 
@@ -14,3 +14,6 @@ Then you need to start the server for the front end application
     cd telemetry-viewer
     npm i
     npm run start
+    
+An example of it playing back a recorded flight:
+https://www.youtube.com/watch?v=mgI0dBVt3d4
