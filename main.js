@@ -1,6 +1,5 @@
 const SerialPort = require('serialport');
 const ByteLength = require('@serialport/parser-byte-length');
-const Readline = require('@serialport/parser-readline');
 const crc8 = require('./utils.js');
 const _ = require('lodash');
 let telemetryRxBuffer = [];
@@ -53,12 +52,11 @@ app.post('/connect', function(req, res){
 });
 
 function setFastMode(){
-  // const parser = port.pipe(new Readline({ delimiter: '\n' }))
-  // parser.on('data', console.log)
   port.write('$$$');
   setTimeout(()=>port.write("F,1\n"),2000);
   setTimeout(setupRead,4000);
 }
+
 function setupRead() {
   parser = port.pipe(new ByteLength({length: 1}));
   parser.on('data', data => {
@@ -73,8 +71,6 @@ http.listen(3000, function(){
   console.log('listening on *:3000');
 });
 
-//CRSF_FRAME_SIZE_MAX = 64?
-
 const RADIO_ADDRESS       = 0xEA;
 // Frame id
 const GPS_ID              = 0x02;
@@ -87,30 +83,8 @@ const PING_DEVICES_ID     = 0x28;
 const DEVICE_INFO_ID      = 0x29;
 const REQUEST_SETTINGS_ID = 0x2A;
 // subtype index
-const RX_RSSI1_INDEX = 0;
-const RX_RSSI2_INDEX = 1;
-const RX_QUALITY_INDEX = 2;
-const RX_SNR_INDEX = 3;
-const RX_ANTENNA_INDEX = 4;
-const RF_MODE_INDEX =  5;
 const TX_POWER_INDEX = 6;
-const TX_RSSI_INDEX =  7;
-const TX_QUALITY_INDEX = 8;
 const TX_SNR_INDEX = 9;
-const BATT_VOLTAGE_INDEX = 10;
-const BATT_CURRENT_INDEX = 11;
-const BATT_CAPACITY_INDEX =  12;
-const GPS_LATITUDE_INDEX = 13;
-const GPS_LONGITUDE_INDEX =  14;
-const GPS_GROUND_SPEED_INDEX = 15;
-const GPS_HEADING_INDEX = 16;
-const GPS_ALTITUDE_INDEX = 17;
-const GPS_SATELLITES_INDEX = 18;
-const ATTITUDE_PITCH_INDEX = 19;
-const ATTITUDE_ROLL_INDEX = 20;
-const ATTITUDE_YAW_INDEX = 21;
-const FLIGHT_MODE_INDEX = 22;
-const UNKNOWN_INDEX = 23;
 const subtypeId = 
 ['RX_RSSI1_INDEX',
 'RX_RSSI2_INDEX',
@@ -135,64 +109,7 @@ const subtypeId =
 'ATTITUDE_ROLL_INDEX',
 'ATTITUDE_YAW_INDEX',
 'FLIGHT_MODE_INDEX',
-'UNKNOWN_INDEX']
-
-/*
-//frame type //subtype //label          //unit             //precision?
-const CrossfireSensor crossfireSensors[] = {
-  {LINK_ID,        0, ZSTR_RX_RSSI1,    UNIT_DB,            0},
-  {LINK_ID,        1, ZSTR_RX_RSSI2,    UNIT_DB,            0},
-  {LINK_ID,        2, ZSTR_RX_QUALITY,  UNIT_PERCENT,       0},
-  {LINK_ID,        3, ZSTR_RX_SNR,      UNIT_DB,            0},
-  {LINK_ID,        4, ZSTR_ANTENNA,     UNIT_RAW,           0},
-  {LINK_ID,        5, ZSTR_RF_MODE,     UNIT_RAW,           0},
-  {LINK_ID,        6, ZSTR_TX_POWER,    UNIT_MILLIWATTS,    0},
-  {LINK_ID,        7, ZSTR_TX_RSSI,     UNIT_DB,            0},
-  {LINK_ID,        8, ZSTR_TX_QUALITY,  UNIT_PERCENT,       0},
-  {LINK_ID,        9, ZSTR_TX_SNR,      UNIT_DB,            0},
-  {BATTERY_ID,     0, ZSTR_BATT,        UNIT_VOLTS,         1},
-  {BATTERY_ID,     1, ZSTR_CURR,        UNIT_AMPS,          1},
-  {BATTERY_ID,     2, ZSTR_CAPACITY,    UNIT_MAH,           0},
-  {GPS_ID,         0, ZSTR_GPS,         UNIT_GPS_LATITUDE,  0},
-  {GPS_ID,         0, ZSTR_GPS,         UNIT_GPS_LONGITUDE, 0},
-  {GPS_ID,         2, ZSTR_GSPD,        UNIT_KMH,           1},
-  {GPS_ID,         3, ZSTR_HDG,         UNIT_DEGREE,        3},
-  {GPS_ID,         4, ZSTR_ALT,         UNIT_METERS,        0},
-  {GPS_ID,         5, ZSTR_SATELLITES,  UNIT_RAW,           0},
-  {ATTITUDE_ID,    0, ZSTR_PITCH,       UNIT_RADIANS,       3},
-  {ATTITUDE_ID,    1, ZSTR_ROLL,        UNIT_RADIANS,       3},
-  {ATTITUDE_ID,    2, ZSTR_YAW,         UNIT_RADIANS,       3},
-  {FLIGHT_MODE_ID, 0, ZSTR_FLIGHT_MODE, UNIT_TEXT,          0},
-  {0,              0, "UNKNOWN",        UNIT_RAW,           0},
-};
-*/
-
-/*
- * CRSF protocol
- *
- * CRSF protocol uses a single wire half duplex uart connection.
- * The master sends one frame every 4ms and the slave replies between two frames from the master.
- *
- * 420000 baud - being transmitted via UAT @ 115200
- * not inverted
- * 8 Bit
- * 1 Stop bit
- * Big endian
- * 420000 bit/s = 46667 byte/s (including stop bit) = 21.43us per byte
- * Max frame size is 64 bytes
- * A 64 byte frame plus 1 sync byte can be transmitted in 1393 microseconds.
- *
- * CRSF_TIME_NEEDED_PER_FRAME_US is set conservatively at 1500 microseconds
- *
- * Every frame has the structure:
- * <Device address><Frame length><Type><Payload><CRC>
- *
- * Device address: (uint8_t)
- * Frame length:   length in  bytes including Type (uint8_t)
- * Type:           (uint8_t)
- * CRC:            (uint8_t)
- *
- */
+'UNKNOWN_INDEX'];
 
 function getFrameType(type) {
   switch (type) {
@@ -349,12 +266,10 @@ function getCrossfireTelemetryValue(N, index){
 
 function processTelemetry(data) {
   if (telemetryRxBuffer.length === 0 && data != RADIO_ADDRESS) {
-    // console.log("[XF] address 0x" + data.toString(16) + " error");
     return;
   }
   
   if (telemetryRxBuffer.length == 1 && (data < 2 || data > TELEMETRY_RX_PACKET_SIZE-2)) {
-    // console.log("[XF] length 0x" + data.toString(16) + " error");
     telemetryRxBuffer = [];
     return;
   }
@@ -362,7 +277,6 @@ function processTelemetry(data) {
   if (telemetryRxBuffer.length < TELEMETRY_RX_PACKET_SIZE) {
     telemetryRxBuffer.push(data);
   } else {
-    // console.log("[XF] array size " + telemetryRxBuffer.length + " error");
     telemetryRxBuffer = [];
   }
 
@@ -377,13 +291,9 @@ function processTelemetry(data) {
 
 function processCrossfireTelemetryFrame() {
   if (!checkCrossfireTelemetryFrameCRC()) {
-    // console.log("[XF] CRC error");
     return;
   }
   getFrameType(telemetryRxBuffer[2]);
-  // telemetryRxBuffer[2] = telemetryRxBuffer[2]+'('++')';
-  // console.log(telemetryRxBuffer.slice(2,telemetryRxBuffer.length-1).join(','));
-
 }
 
 function checkCrossfireTelemetryFrameCRC() {

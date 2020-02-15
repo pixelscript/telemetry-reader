@@ -24,6 +24,11 @@ export default {
   sockets: {
     gps: function(data) {
       this.recordData('gps',data);
+      this.$store.commit('addEvent',{
+        time: data.time,
+        property: 'gps',
+        data
+      });
     },
     attitude: function(data) {
       this.recordData('attitude',data);

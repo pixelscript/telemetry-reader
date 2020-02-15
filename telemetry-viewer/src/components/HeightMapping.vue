@@ -38,15 +38,8 @@ export default {
       
     }
   },
-  // watch: {
-  //   'chartData': {
-  //     handler: dataHandler,
-  //     deep: true
-  //   }
-  // },
   sockets: {
     gps: function(gps){
-      // this.chartData.labels.push('');
       this.chartData.datasets[0].data.push({x:this.chartData.datasets[0].data.length, y:gps.alt});
       this.chartData = {
         datasets: [

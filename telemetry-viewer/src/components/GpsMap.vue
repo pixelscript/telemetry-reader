@@ -18,27 +18,25 @@ export default {
        this.initMap();
     });
   },
+  watch: {
+    gps: function(val) {
+      this.setGps(val);
+    }
+  },
   sockets: {
-    gps: function(gps){
-      if(this.poly) {
-          this.path.push(new google.maps.LatLng(gps.lat,gps.long));
-          this.poly.setPath(this.path);
-          this.pathB.push(new google.maps.LatLng(gps.lat,gps.long));
-          this.polyB.setPath(this.pathB);
-          this.map.panTo(new google.maps.LatLng(gps.lat,gps.long));
-          this.trackerpath = [this.home, new google.maps.LatLng(gps.lat,gps.long)];
-          this.tracker.setPath(this.trackerpath);
-          var heading = google.maps.geometry.spherical.computeHeading(this.trackerpath[0], this.trackerpath[1]);
-          var distance = google.maps.geometry.spherical.computeDistanceBetween(this.trackerpath[0], this.trackerpath[1]);
-          this.$store.commit('setDistance',distance);
-          this.$store.commit('setHeadingAngle', heading);
-          this.$store.commit('setAlt', gps.alt);
-          // this.$store.commit('setHomeLat', gps.lat);
-          // this.$store.commit('setHomeLong', gps.long);
-        }
+    gps: function(gps) {
+      if(this.isLive) {
+        this.$store.commit('setGps',gps);
+      }
     }
   },
   computed: {
+    isLive: function() {
+      return this.$store.state.isLive;
+    },
+    gps: function() {
+      return this.$store.state.gps;
+    },
     home: function() {
       //      return new google.maps.LatLng(this.$store.state.homeLat,this.$store.state.homeLong);
       if(this.$store.state.homeLat !== 0 && this.$store.state.homeLong !== 0) {
@@ -79,6 +77,24 @@ export default {
       });
       this.tracker.setMap(this.map);
       this.trackerpath = this.tracker.getPath();
+    },
+    setGps: function(gps) {
+      if(this.poly) {
+        this.path.push(new google.maps.LatLng(gps.lat,gps.long));
+        this.poly.setPath(this.path);
+        this.pathB.push(new google.maps.LatLng(gps.lat,gps.long));
+        this.polyB.setPath(this.pathB);
+        this.map.panTo(new google.maps.LatLng(gps.lat,gps.long));
+        this.trackerpath = [this.home, new google.maps.LatLng(gps.lat,gps.long)];
+        this.tracker.setPath(this.trackerpath);
+        var heading = google.maps.geometry.spherical.computeHeading(this.trackerpath[0], this.trackerpath[1]);
+        var distance = google.maps.geometry.spherical.computeDistanceBetween(this.trackerpath[0], this.trackerpath[1]);
+        this.$store.commit('setDistance',distance);
+        this.$store.commit('setHeadingAngle', heading);
+        this.$store.commit('setAlt', gps.alt);
+        // this.$store.commit('setHomeLat', gps.lat);
+        // this.$store.commit('setHomeLong', gps.long);
+      }
     }
   }
 }
