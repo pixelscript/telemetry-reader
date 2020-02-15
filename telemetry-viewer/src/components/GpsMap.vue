@@ -13,7 +13,7 @@ export default {
     }
   },
   mounted: function(){
-    GoogleMapsLoader.KEY = 'AIzaSyDISYIikzKG6gzSg11jPvsaMtlIxzsiygc';
+    GoogleMapsLoader.KEY = ''// insert key here;
     GoogleMapsLoader.load(google => {
        this.initMap();
     });
