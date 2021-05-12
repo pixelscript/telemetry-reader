@@ -12,7 +12,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "body-parser": "^1.18.3",
-    "chart.js": "^2.7.3",
+    "chart.js": "^2.9.4",
     "element-ui": "^2.5.2",
     "google-maps": "^3.3.0",
     "three": "^0.100.0",
