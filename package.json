@@ -12,8 +12,8 @@
     "serialport": "^7.1.4"
   },
   "dependencies": {
-    "body-parser": "^1.19.0",
-    "express": "^4.15.2",
+    "body-parser": "^1.20.1",
+    "express": "^4.18.2",
     "lodash": "^4.17.11",
     "socket.io": "^2.2.0"
   }
